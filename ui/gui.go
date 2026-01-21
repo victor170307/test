@@ -42,9 +42,13 @@ func StartApp(data []models.Artist) {
 		geoBtn := widget.NewButton("View Concert Map Coordinates", func() {
 			// This is where you call utils.GetCoordinates for their locations
 			// And perhaps open a map URL or show a popup
-			for loc := range a.Locations {
-				lat, lon, _ := utils.GetCoordinates(loc)
-				fmt.Printf("Location: %s -> %s, %s\n", loc, lat, lon)
+			if a.Locations != nil {
+				for loc := range a.Locations {
+					lat, lon, err := utils.GetCoordinates(loc)
+					if err == nil {
+						fmt.Printf("Location: %s -> %s, %s\n", loc, lat, lon)
+					}
+				}
 			}
 		})
 
@@ -76,11 +80,26 @@ func StartApp(data []models.Artist) {
 	searchEntry.SetPlaceHolder("Search artist, member, location...")
 	searchEntry.OnChanged = func(s string) {
 		// Logic to filter the 'filteredData' slice based on 's'
-		// If s is empty, reset filteredData to 'data'
-		// Then call list.Refresh()
-
-		// Note: For the "Suggestions" requirement, you might want to use
-		// a PopUpMenu or a separate list that appears under the search bar.
+		filteredData = data
+		if s != "" {
+			filteredData = nil
+			lowerSearch := strings.ToLower(s)
+			for _, artist := range data {
+				// Check artist name
+				if strings.Contains(strings.ToLower(artist.Name), lowerSearch) {
+					filteredData = append(filteredData, artist)
+					continue
+				}
+				// Check members
+				for _, member := range artist.Members {
+					if strings.Contains(strings.ToLower(member), lowerSearch) {
+						filteredData = append(filteredData, artist)
+						break
+					}
+				}
+			}
+		}
+		list.Refresh()
 	}
 
 	// Layout
